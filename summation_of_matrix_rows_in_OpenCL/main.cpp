@@ -33,6 +33,7 @@ int main(int argc, char** argv)
     res1.resize(rows);
     res2.resize(rows);
     matrixGeneration(matrix);
+    sumInCP(matrix, rows, cols, res2);
     int err;
     char *KernelSource = (char*) malloc(1000000); // указатель на буфер со строкой - кодом kernel-функции
     
@@ -196,7 +197,7 @@ int main(int argc, char** argv)
     }
     uint good = 0;
     for (uint i = 0; i < res2.size(); i++) {
-        good = abs(res2[i]-res1[i]) > 0.0001? good+1: good;
+        good = res2[i] == res1[i]? good+1: good;
     }
     if (good == rows) {
         std::cout << "Всё хорошо\n";
@@ -215,13 +216,14 @@ int main(int argc, char** argv)
 
 void matrixGeneration(std::vector<float>& vec) {
     std::mt19937 gen(time(0));
-    std::uniform_real_distribution<float> urd(100.0, 100.0);
+    std::uniform_real_distribution<float> urd(-1.0, 1.0);
     for (long i = 0; i < vec.size(); i++) {
         vec[i] = urd(gen);
     }
 }
 
 void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res) {
+    std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
     for (uint i = 0; i < r; i++) {
         float sum = 0.000000;
         uint cr = i * c;
@@ -230,4 +232,7 @@ void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<fl
         }
         res[i] = sum;
     }
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+    std::cout << "Время на ЦП: " << (double)duration / 1000 << std::endl;
 }
