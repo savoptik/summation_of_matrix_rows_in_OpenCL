@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FE8637E7215B6DC5000F0850 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE8637E6215B6DC5000F0850 /* main.cpp */; };
+		FE8637EF215B6DE8000F0850 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FE8637EE215B6DE8000F0850 /* OpenCL.framework */; };
+		FE8637F3215B7802000F0850 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE8637E6215B6DC5000F0850 /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,8 @@
 /* Begin PBXFileReference section */
 		FE8637E3215B6DC5000F0850 /* summation_of_matrix_rows_in_OpenCL */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = summation_of_matrix_rows_in_OpenCL; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE8637E6215B6DC5000F0850 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		FE8637EE215B6DE8000F0850 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		FE8637F0215B6FD1000F0850 /* kernel.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = kernel.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FE8637EF215B6DE8000F0850 /* OpenCL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +47,7 @@
 			children = (
 				FE8637E5215B6DC5000F0850 /* summation_of_matrix_rows_in_OpenCL */,
 				FE8637E4215B6DC5000F0850 /* Products */,
+				FE8637ED215B6DE8000F0850 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,8 +63,17 @@
 			isa = PBXGroup;
 			children = (
 				FE8637E6215B6DC5000F0850 /* main.cpp */,
+				FE8637F0215B6FD1000F0850 /* kernel.c */,
 			);
 			path = summation_of_matrix_rows_in_OpenCL;
+			sourceTree = "<group>";
+		};
+		FE8637ED215B6DE8000F0850 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FE8637EE215B6DE8000F0850 /* OpenCL.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -69,9 +83,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = FE8637EA215B6DC5000F0850 /* Build configuration list for PBXNativeTarget "summation_of_matrix_rows_in_OpenCL" */;
 			buildPhases = (
-				FE8637DF215B6DC5000F0850 /* Sources */,
 				FE8637E0215B6DC5000F0850 /* Frameworks */,
 				FE8637E1215B6DC5000F0850 /* CopyFiles */,
+				FE8637F2215B77EC000F0850 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -114,11 +128,11 @@
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		FE8637DF215B6DC5000F0850 /* Sources */ = {
+		FE8637F2215B77EC000F0850 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FE8637E7215B6DC5000F0850 /* main.cpp in Sources */,
+				FE8637F3215B7802000F0850 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
