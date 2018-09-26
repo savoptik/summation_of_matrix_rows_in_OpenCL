@@ -7,7 +7,7 @@ __kernel void sumInRow(__global doubl* input, uint size_row, __global double* au
     uint currentRow = i * size_row; // вычисляем номер текущей строки.
     double sum = 0.0000; // переменная для накопления суммы.
     for (uint j = 0; j < size_row; j++) {
-        sum += input[currentRow + j]; // суммируем строки.
+        sum += input[currentRow + j]; // суммируем строку
     }
     autput[i] = sum; // переписываем значение в выходной массив.
 }
