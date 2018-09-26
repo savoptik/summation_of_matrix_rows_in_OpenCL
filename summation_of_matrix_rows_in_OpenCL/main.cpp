@@ -17,9 +17,19 @@
 #include <OpenCL/opencl.h>
 #include <iostream>
 #include <chrono>
+#include <vector>
+#include <random>
+#include <ctime>
+
+const uint rows = 100000, cols = 1024; // размеры будущей матрицы
+
+void matrixGeneration(std::vector<float>& vec);
+void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res);
 
 int main(int argc, char** argv)
 {
+    std::vector<float> matrix;
+    matrix.resize()rows * cols);
     int err;
     char *KernelSource = (char*) malloc(1000000); // указатель на буфер со строкой - кодом kernel-функции
     
@@ -187,3 +197,21 @@ int main(int argc, char** argv)
     return 0;
 }
 
+void matrixGeneration(std::vector<float>& vec) {
+    std::mt19937 gen(time(0));
+    std::uniform_real_distribution<float> urd(100.0, 100.0);
+    for (long i = 0; i < vec.size(); i++) {
+        vec[i] = urd(gen);
+    }
+}
+
+void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res) {
+    for (uint i = 0; i < r; i++) {
+        float sum = 0.000000;
+        uint cr = i * c;
+        for (int j = 0; j < c; j++) {
+            sum += mat[cr + j];
+        }
+        res[i] = sum;
+    }
+}
