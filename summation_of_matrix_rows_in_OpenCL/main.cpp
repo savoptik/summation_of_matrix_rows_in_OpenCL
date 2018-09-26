@@ -5,7 +5,11 @@
 //  Created by Артём Семёнов on 26/09/2018.
 //  Copyright © 2018 Артём Семёнов. All rights reserved.
 //
-
+// время суммирования:
+// CPU: 379.206
+// GPU: 1.84467e+10
+//
+//
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,31 +27,31 @@
 
 const uint rows = 100000, cols = 1024; // размеры будущей матрицы
 
-void matrixGeneration(std::vector<float>& vec);
-void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res);
+void matrixGeneration(std::vector<float>& vec); // функция генерирует случайную линеризованную матрицу
+void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res); // функция суммирует строки на процессоре
 
 int main(int argc, char** argv)
 {
-    std::vector<float> matrix, res1, res2;
-    matrix.resize(cols * rows);
-    res1.resize(rows);
-    res2.resize(rows);
-    matrixGeneration(matrix);
-    sumInCP(matrix, rows, cols, res2);
-    int err;
+    std::vector<float> matrix, res1, res2; // вектор матрицы и векторы результатов
+    matrix.resize(cols * rows); // выделяем память для матрицы
+    res1.resize(rows); // выделяем память для первого массива результатов.
+    res2.resize(rows); // выделяем память для второго массива результатов
+    matrixGeneration(matrix); // генирируем матрицу случайных чисел
+    sumInCP(matrix, rows, cols, res1); // выполняем суммирование на процессоре.
+    int err; // ошибка
     char *KernelSource = (char*) malloc(1000000); // указатель на буфер со строкой - кодом kernel-функции
     
-    size_t global;                      // размер грида ()в потоках)
-    size_t local;                       // размер блока потоков
+    size_t global; // размер грида ()в потоках)
+    size_t local; // размер блока потоков
     
-    cl_device_id device_id;             // id вычислителя
-    cl_context context;                 // контекст
-    cl_command_queue commands;          // очередь заданий для выполнения на видеокарте
-    cl_program program;                 // наша программа для видеокарты (она сейчас состоит всего из одной функции)
-    cl_kernel kernel;                   // объект, соответствующий нашей kernel-функции
+    cl_device_id device_id; // id вычислителя
+    cl_context context;  // контекст
+    cl_command_queue commands; // очередь заданий для выполнения на видеокарте
+    cl_program program; // наша программа для видеокарты (она сейчас состоит всего из одной функции)
+    cl_kernel kernel; // объект, соответствующий нашей kernel-функции
     
-    cl_mem input;                       // буфер для входных данных на видеокарте
-    cl_mem output;                       // буфер для выходных данных на видеокарте
+    cl_mem input; // буфер для входных данных на видеокарте
+    cl_mem output; // буфер для выходных данных на видеокарте
     
     // ищем вычислительное устройство нужного типа
     int gpu = 1;
@@ -180,7 +184,8 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     cl_ulong time_start, time_end;
-    //    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    // получаем время начала и конца вычисления
+    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
     if (!err) {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
@@ -195,9 +200,11 @@ int main(int argc, char** argv)
         printf("Error: Failed to read output array! %d\n", err);
         exit(1);
     }
+    
+    // сверяемся
     uint good = 0;
     for (uint i = 0; i < res2.size(); i++) {
-        good = res2[i] == res1[i]? good+1: good;
+        good = abs(res2[i]-res1[i]) <= 0.01? good+1: good;
     }
     if (good == rows) {
         std::cout << "Всё хорошо\n";
@@ -215,24 +222,24 @@ int main(int argc, char** argv)
 }
 
 void matrixGeneration(std::vector<float>& vec) {
-    std::mt19937 gen(time(0));
-    std::uniform_real_distribution<float> urd(-1.0, 1.0);
-    for (long i = 0; i < vec.size(); i++) {
-        vec[i] = urd(gen);
+    std::mt19937 gen(static_cast<int>(time(0))); // создаём генератор.
+    std::uniform_real_distribution<float> urd(-1.0, 1.0); // задаём диапазон
+    for (long i = 0; i < vec.size(); i++) { // идём по массиву
+        vec[i] = urd(gen); // заполняем его случайными числами
     }
 }
 
 void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res) {
-    std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now(); // фиксируем время начала вычияления
     for (uint i = 0; i < r; i++) {
-        float sum = 0.000000;
+        float sum = 0;
         uint cr = i * c;
         for (int j = 0; j < c; j++) {
             sum += mat[cr + j];
         }
         res[i] = sum;
     }
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-    std::cout << "Время на ЦП: " << (double)duration / 1000 << std::endl;
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now(); // фиксируем время конца вычисления
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(); // получаем время выполнения в микросекундах
+    std::cout << "Время на ЦП: " << (double)duration / 1000 << std::endl; // выводим время в милисекундах
 }
