@@ -28,8 +28,11 @@ void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<fl
 
 int main(int argc, char** argv)
 {
-    std::vector<float> matrix;
-    matrix.resize()rows * cols);
+    std::vector<float> matrix, res1, res2;
+    matrix.resize(cols * rows);
+    res1.resize(rows);
+    res2.resize(rows);
+    matrixGeneration(matrix);
     int err;
     char *KernelSource = (char*) malloc(1000000); // указатель на буфер со строкой - кодом kernel-функции
     
@@ -43,9 +46,10 @@ int main(int argc, char** argv)
     cl_kernel kernel;                   // объект, соответствующий нашей kernel-функции
     
     cl_mem input;                       // буфер для входных данных на видеокарте
+    cl_mem output;                       // буфер для выходных данных на видеокарте
     
     // ищем вычислительное устройство нужного типа
-    int gpu = 0;
+    int gpu = 1;
     err = clGetDeviceIDs(NULL, gpu ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU, 1, &device_id, NULL);
     if (err != CL_SUCCESS) {
         printf("Error: Failed to create a device group!\n");
@@ -104,7 +108,7 @@ int main(int argc, char** argv)
     }
     
     // находим в программе для видеокарты точку входа - kernel функию с нужным именем
-    kernel = clCreateKernel(program, "square", &err);
+    kernel = clCreateKernel(program, "sumInRow", &err);
     if (!kernel || err != CL_SUCCESS)
     {
         printf("Error: Failed to create compute kernel!\n");
@@ -112,15 +116,22 @@ int main(int argc, char** argv)
     }
     
     // выделяем память на видеокарте для входных данных и результата
-    input = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(uchar) * img.rows * img.cols * 3, NULL, NULL);
+    input = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(float) * matrix.size(), NULL, NULL);
     if (!input)
     {
         printf("Error: Failed to allocate device memory!\n");
         exit(1);
     }
     
+    output = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(float) * rows, NULL, NULL);
+    if (!output)
+    {
+        printf("Error: Failed to allocate device memory!\n");
+        exit(1);
+    }
+    
     // копируем входные данные на видеокарту
-    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(uchar) *img.rows * img.cols * 3, img.data, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(float) * matrix.size(), matrix.data(), 0, NULL, NULL);
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to write to source array!\n");
@@ -130,8 +141,9 @@ int main(int argc, char** argv)
     // задаем параметры вызова kernel-функции
     err = 0;
     err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &img.rows);
-    err |= clSetKernelArg(kernel, 2, sizeof(unsigned int), &img.cols);
+    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &cols);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
+    err |= clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to set kernel arguments! %d\n", err);
@@ -147,7 +159,7 @@ int main(int argc, char** argv)
     }
     
     // запускаем нашу kernel-функцию на гриде из count потоков с найденным максимальным размером блока
-    global = ((img.rows * img.cols * 3) + (local - 1)) / local * local;
+    global = (matrix.size() + local - 1) / local * local;
     cl_event event;
     std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
     err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, &event);
@@ -166,25 +178,29 @@ int main(int argc, char** argv)
         printf("Error: Failed to execute kernel!\n");
         return EXIT_FAILURE;
     }
-    //    cl_ulong time_start, time_end;
+    cl_ulong time_start, time_end;
     //    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    //    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    //    if (gpu == 0) {
+    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    if (!err) {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
     std::cout << "Время на ЦП параллельно: " << (double)duration / 1000 << std::endl;
-    //    }
-    //    else std::cout << "время на видеокарте: " << (double)(time_end - time_start)/1e9 << std::endl;
+    } else std::cout << "время на видеокарте: " << (double)(time_end - time_start)/1e9 << std::endl;
     clReleaseEvent(event);
     
     // копируем результаты с видеокарты
-    err = clEnqueueReadBuffer( commands, input, CL_TRUE, 0, sizeof(uchar) * img.rows * img.cols * 3, img.data, 0, NULL, NULL );
+    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(float) * res2.size(), res2.data(), 0, NULL, NULL );
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to read output array! %d\n", err);
         exit(1);
     }
-    
-
+    uint good = 0;
+    for (uint i = 0; i < res2.size(); i++) {
+        good = abs(res2[i]-res1[i]) > 0.0001? good+1: good;
+    }
+    if (good == rows) {
+        std::cout << "Всё хорошо\n";
+    } else std::cout << "Что-то пошло не так\n";
     printf("я всё.\n");
     
     // освобождаем память
