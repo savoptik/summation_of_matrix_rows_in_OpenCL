@@ -185,8 +185,8 @@ int main(int argc, char** argv)
     }
     cl_ulong time_start, time_end;
     // получаем время начала и конца вычисления
-    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
     if (!err) {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
     std::cout << "Время на ЦП параллельно: " << (double)duration / 1000 << std::endl;
