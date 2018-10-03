@@ -5,7 +5,6 @@
 //  Created by Артём Семёнов on 26/09/2018.
 //  Copyright © 2018 Артём Семёнов. All rights reserved.
 //
-// Без использования общей памяти
 // время суммирования:
 // CPU: 116.751
 // GPU:1078.59
@@ -64,6 +63,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
+    // получаем имя устройства
       char device_string[1024];
     clGetDeviceInfo(device_id, CL_DEVICE_NAME, sizeof(device_string), &device_string, NULL);
     printf("  CL_DEVICE_NAME: \t\t\t%s\n", device_string);
