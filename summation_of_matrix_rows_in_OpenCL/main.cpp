@@ -6,10 +6,11 @@
 //  Copyright © 2018 Артём Семёнов. All rights reserved.
 //
 // время суммирования:
-// CPU: 379.206
-// GPU: 1.84467e+10
+// CPU: 116.751
+// GPU:1078.59
+// cp opencl: 128.403
 //
-//
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,10 +26,10 @@
 #include <random>
 #include <ctime>
 
-const uint rows = 100000, cols = 1024; // размеры будущей матрицы
+const int rows = 100000, cols = 1024; // размеры будущей матрицы
 
 void matrixGeneration(std::vector<float>& vec); // функция генерирует случайную линеризованную матрицу
-void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res); // функция суммирует строки на процессоре
+void sumInCP(std::vector<float>& mat, const int r, const int c, std::vector<float>& res); // функция суммирует строки на процессоре
 
 int main(int argc, char** argv)
 {
@@ -38,6 +39,7 @@ int main(int argc, char** argv)
     res2.resize(rows); // выделяем память для второго массива результатов
     matrixGeneration(matrix); // генирируем матрицу случайных чисел
     sumInCP(matrix, rows, cols, res1); // выполняем суммирование на процессоре.
+    
     int err; // ошибка
     char *KernelSource = (char*) malloc(1000000); // указатель на буфер со строкой - кодом kernel-функции
     
@@ -61,6 +63,10 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
+      char device_string[1024];
+    clGetDeviceInfo(device_id, CL_DEVICE_NAME, sizeof(device_string), &device_string, NULL);
+    printf("  CL_DEVICE_NAME: \t\t\t%s\n", device_string);
+    
     // создаем контекст
     context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     if (!context)
@@ -70,7 +76,7 @@ int main(int argc, char** argv)
     }
     
     // создаем очередь задач
-    commands = clCreateCommandQueue(context, device_id, 0, &err);
+    commands = clCreateCommandQueue(context, device_id, CL_QUEUE_PROFILING_ENABLE, &err);
     if (!commands)
     {
         printf("Error: Failed to create a command commands!\n");
@@ -174,23 +180,23 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
-    // ждем завершения выполнения задачи
+// ждем завершения выполнения задачи
     err = clWaitForEvents(1, &event);
-    //    clFinish(commands);
+//    clFinish(commands);
     std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-    if (err)
+    if (err != CL_SUCCESS)
     {
         printf("Error: Failed to execute kernel!\n");
         return EXIT_FAILURE;
     }
     cl_ulong time_start, time_end;
     // получаем время начала и конца вычисления
-    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    if (!err) {
+    if (err != CL_SUCCESS) {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
-    std::cout << "Время на ЦП параллельно: " << (double)duration / 1000 << std::endl;
-    } else std::cout << "время на видеокарте: " << (double)(time_end - time_start)/1e9 << std::endl;
+    std::cout << "Время crono: " << (double)duration / 1000 << " ошибка номер " << err << " а должно быть " << CL_SUCCESS << std::endl;
+    } else std::cout << "время opencl: " << (double)(time_end - time_start)/1e6 << " ошибка номер " << err << std::endl;
     clReleaseEvent(event);
     
     // копируем результаты с видеокарты
@@ -204,7 +210,7 @@ int main(int argc, char** argv)
     // сверяемся
     uint good = 0;
     for (uint i = 0; i < res2.size(); i++) {
-        good = abs(res2[i]-res1[i]) <= 0.01? good+1: good;
+        good = res2[i] == res1[i] ? good+1: good;
     }
     if (good == rows) {
         std::cout << "Всё хорошо\n";
@@ -229,11 +235,11 @@ void matrixGeneration(std::vector<float>& vec) {
     }
 }
 
-void sumInCP(std::vector<float>& mat, const uint r, const uint c, std::vector<float>& res) {
+void sumInCP(std::vector<float>& mat, const int r, const int c, std::vector<float>& res) {
     std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now(); // фиксируем время начала вычияления
-    for (uint i = 0; i < r; i++) {
+    for (int i = 0; i < r; i++) {
         float sum = 0;
-        uint cr = i * c;
+        int cr = i * c;
         for (int j = 0; j < c; j++) {
             sum += mat[cr + j];
         }
