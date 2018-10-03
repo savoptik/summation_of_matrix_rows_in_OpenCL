@@ -5,6 +5,7 @@
 //  Created by Артём Семёнов on 26/09/2018.
 //  Copyright © 2018 Артём Семёнов. All rights reserved.
 //
+// Без использования общей памяти
 // время суммирования:
 // CPU: 116.751
 // GPU:1078.59
@@ -168,6 +169,7 @@ int main(int argc, char** argv)
         printf("Error: Failed to retrieve kernel work group info! %d\n", err);
         exit(1);
     }
+    std::cout << "размер блока потоков " << local << std::endl;
     
     // запускаем нашу kernel-функцию на гриде из count потоков с найденным максимальным размером блока
     global = (matrix.size() + local - 1) / local * local;
