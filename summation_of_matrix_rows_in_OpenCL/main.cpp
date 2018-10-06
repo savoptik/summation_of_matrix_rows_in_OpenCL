@@ -54,6 +54,7 @@ int main(int argc, char** argv)
     
     cl_mem input; // буфер для входных данных на видеокарте
     cl_mem output; // буфер для выходных данных на видеокарте
+    cl_mem output2; // буфер для выходных данных на видеокарте
     
     // ищем вычислительное устройство нужного типа
     int gpu = 1;
@@ -142,6 +143,14 @@ int main(int argc, char** argv)
         exit(1);
     }
     
+    output2 = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(float) * rows, NULL, NULL);
+    if (!output)
+    {
+        printf("Error: Failed to allocate device memory!\n");
+        exit(1);
+    }
+
+    
     // копируем входные данные на видеокарту
     err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(float) * matrix.size(), matrix.data(), 0, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -217,10 +226,13 @@ int main(int argc, char** argv)
     if (good == rows) {
         std::cout << "Всё хорошо\n";
     } else std::cout << "Что-то пошло не так\n";
-    printf("я всё.\n");
+    printf("Приступаю к запуску оптимизированной версии\n");
     
     // готовимся к запуску ускоренной программы
-    
+    // горантируем, что всё будет по честному.
+    for (int i = 0; i < res2.size(); i++) {
+        res2[i] = 0;
+    }
     // ищим точку входа
     kernel = clCreateKernel(program, "sumInRowFast", &err);
     if (!kernel || err != CL_SUCCESS)
@@ -233,7 +245,7 @@ int main(int argc, char** argv)
     err = 0;
     err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
     err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &cols);
-    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output2);
     err |= clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     if (err != CL_SUCCESS)
     {
@@ -279,7 +291,7 @@ int main(int argc, char** argv)
     clReleaseEvent(event);
     
     // копируем результаты с видеокарты
-    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(float) * res2.size(), res2.data(), 0, NULL, NULL );
+    err = clEnqueueReadBuffer( commands, output2, CL_TRUE, 0, sizeof(float) * res2.size(), res2.data(), 0, NULL, NULL );
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to read output array! %d\n", err);
@@ -296,9 +308,10 @@ int main(int argc, char** argv)
     } else std::cout << "Что-то пошло не так\n";
     printf("я всё.\n");
     
-    
     // освобождаем память
     clReleaseMemObject(input);
+    clReleaseMemObject(output);
+    clReleaseMemObject(output2);
     clReleaseProgram(program);
     clReleaseKernel(kernel);
     clReleaseCommandQueue(commands);
