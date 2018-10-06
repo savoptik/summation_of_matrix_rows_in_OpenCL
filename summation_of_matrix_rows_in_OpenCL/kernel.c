@@ -9,3 +9,8 @@ __kernel void sumInRow(__global float* input, unsigned int size_row, __global fl
     }
     output[i] = sum; // переписываем значение в выходной массив.
 }
+
+__kernel void sumInRowFast(__global float* input, unsigned int size_row, __global float* output, unsigned int size_output)
+{
+    
+}

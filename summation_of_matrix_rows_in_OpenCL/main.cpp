@@ -219,6 +219,86 @@ int main(int argc, char** argv)
     } else std::cout << "Что-то пошло не так\n";
     printf("я всё.\n");
     
+    // готовимся к запуску ускоренной программы
+    
+    // ищим точку входа
+    kernel = clCreateKernel(program, "sumInRowFast", &err);
+    if (!kernel || err != CL_SUCCESS)
+    {
+        printf("Error: Failed to create compute kernel!\n");
+        exit(1);
+    }
+    
+    // задаем параметры вызова kernel-функции
+    err = 0;
+    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
+    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &cols);
+    err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
+    err |= clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to set kernel arguments! %d\n", err);
+        exit(1);
+    }
+
+    // определяем максимальные размер блока потоков
+    err = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to retrieve kernel work group info! %d\n", err);
+        exit(1);
+    }
+    std::cout << "размер блока потоков " << local << std::endl;
+    
+    // запускаем нашу kernel-функцию на гриде из count потоков с найденным максимальным размером блока
+    global = (matrix.size() + local - 1) / local * local;
+    cl_event event;
+    t0 = std::chrono::high_resolution_clock::now();
+    err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, &event);
+    if (err)
+    {
+        printf("Error: Failed to execute kernel!\n");
+        return EXIT_FAILURE;
+    }
+    
+    // ждем завершения выполнения задачи
+    err = clWaitForEvents(1, &event);
+    //    clFinish(commands);
+    t1 = std::chrono::high_resolution_clock::now();
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to execute kernel!\n");
+        return EXIT_FAILURE;
+    }
+    time_start, time_end;
+    // получаем время начала и конца вычисления
+    err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    if (err != CL_SUCCESS) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+        std::cout << "Время crono: " << (double)duration / 1000 << " ошибка номер " << err << " а должно быть " << CL_SUCCESS << std::endl;
+    } else std::cout << "время opencl: " << (double)(time_end - time_start)/1e6 << " ошибка номер " << err << std::endl;
+    clReleaseEvent(event);
+    
+    // копируем результаты с видеокарты
+    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(float) * res2.size(), res2.data(), 0, NULL, NULL );
+    if (err != CL_SUCCESS)
+    {
+        printf("Error: Failed to read output array! %d\n", err);
+        exit(1);
+    }
+    
+    // сверяемся
+    uint good = 0;
+    for (uint i = 0; i < res2.size(); i++) {
+        good = res2[i] == res1[i] ? good+1: good;
+    }
+    if (good == rows) {
+        std::cout << "Всё хорошо\n";
+    } else std::cout << "Что-то пошло не так\n";
+    printf("я всё.\n");
+    
+    
     // освобождаем память
     clReleaseMemObject(input);
     clReleaseProgram(program);
