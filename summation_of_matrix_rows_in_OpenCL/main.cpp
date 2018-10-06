@@ -252,7 +252,6 @@ int main(int argc, char** argv)
     
     // запускаем нашу kernel-функцию на гриде из count потоков с найденным максимальным размером блока
     global = (matrix.size() + local - 1) / local * local;
-    cl_event event;
     t0 = std::chrono::high_resolution_clock::now();
     err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, &event);
     if (err)
@@ -270,7 +269,6 @@ int main(int argc, char** argv)
         printf("Error: Failed to execute kernel!\n");
         return EXIT_FAILURE;
     }
-    time_start, time_end;
     // получаем время начала и конца вычисления
     err = clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
     err |= clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
@@ -289,7 +287,7 @@ int main(int argc, char** argv)
     }
     
     // сверяемся
-    uint good = 0;
+    good = 0;
     for (uint i = 0; i < res2.size(); i++) {
         good = res2[i] == res1[i] ? good+1: good;
     }
