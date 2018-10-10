@@ -26,7 +26,7 @@
 #include <random>
 #include <ctime>
 
-const int rows = 100000, cols = 1024; // размеры будущей матрицы
+const int rows = 100000, cols = 960; // размеры будущей матрицы
 
 void matrixGeneration(std::vector<float>& vec); // функция генерирует случайную линеризованную матрицу
 void sumInCP(std::vector<float>& mat, const int r, const int c, std::vector<float>& res); // функция суммирует строки на процессоре
@@ -260,6 +260,7 @@ int main(int argc, char** argv)
         printf("Error: Failed to retrieve kernel work group info! %d\n", err);
         exit(1);
     }
+    local = 128;
     std::cout << "размер блока потоков " << local << std::endl;
     
     // запускаем нашу kernel-функцию на гриде из count потоков с найденным максимальным размером блока
