@@ -15,7 +15,7 @@ __kernel void sumInRowFast(__global float* input, unsigned int size_row, __globa
     unsigned int i = get_global_id(0); // получаем индекс глобального потока
     unsigned int b = get_group_id(0); // получаем индекс группы потоков
     unsigned int th = get_local_id(0); // получаем индекс локального потока
-    __local float cache[128][3*32]; // заводим свой управляемый кеш
+    __local float cache[128][3*32+1]; // заводим свой управляемый кеш
     float sum = 0; // переменная для накопления суммы.
     for (int part = 0; part < 10; part++) {
         for (int r = 0; r < 96; r++) {
