@@ -5,11 +5,6 @@
 //  Created by Артём Семёнов on 26/09/2018.
 //  Copyright © 2018 Артём Семёнов. All rights reserved.
 //
-// время суммирования:
-// CPU: 116.751
-// GPU:1078.59
-// cp opencl: 128.403
-//
 
 #include <fcntl.h>
 #include <stdio.h>

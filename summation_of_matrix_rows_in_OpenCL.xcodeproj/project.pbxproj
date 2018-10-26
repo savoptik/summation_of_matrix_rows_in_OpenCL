@@ -24,6 +24,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FE04D4B72183121E00090E7E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		FE8637E3215B6DC5000F0850 /* summation_of_matrix_rows_in_OpenCL */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = summation_of_matrix_rows_in_OpenCL; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE8637E6215B6DC5000F0850 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		FE8637EE215B6DE8000F0850 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
@@ -63,6 +64,7 @@
 			isa = PBXGroup;
 			children = (
 				FE8637E6215B6DC5000F0850 /* main.cpp */,
+				FE04D4B72183121E00090E7E /* README.md */,
 				FE8637F0215B6FD1000F0850 /* kernel.c */,
 			);
 			path = summation_of_matrix_rows_in_OpenCL;
